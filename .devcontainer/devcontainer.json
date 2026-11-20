@@ -1,0 +1,33 @@
+{
+  "name": "sf-cicd-lab",
+  "image": "sf-dev:2.159.7",
+  "remoteUser": "dev",
+  "updateRemoteUserUID": true,
+
+  // Org logins live in volumes that belong to THIS project only (guardrail G7).
+  // Rebuilding the container keeps them; other projects can't see them.
+  "mounts": [
+    "source=sf-auth-${devcontainerId},target=/home/dev/.sfdx,type=volume",
+    "source=sf-state-${devcontainerId},target=/home/dev/.sf,type=volume"
+  ],
+
+  // OAuth callback for "sf org login web"
+  "forwardPorts": [1717],
+  "portsAttributes": {
+    "1717": { "label": "Salesforce login callback", "onAutoForward": "silent" }
+  },
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "salesforce.salesforcedx-vscode",
+        "salesforce.sfdx-code-analyzer-vscode"
+      ],
+      "settings": {
+        "salesforcedx-vscode-apex.java.home": "/usr/lib/jvm/java-17-openjdk-amd64"
+      }
+    }
+  },
+
+  "postCreateCommand": "sf --version && sf plugins && java -version && python3 --version && git --version"
+}

@@ -1,0 +1,19 @@
+# Line endings: LF everywhere (dev container, CI and Husky hooks run on Linux),
+# regardless of anyone's personal core.autocrlf setting.
+* text=auto eol=lf
+
+# Windows-only scripts keep CRLF
+*.ps1 text eol=crlf
+*.cmd text eol=crlf
+*.bat text eol=crlf
+
+# Binary files: never converted
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.zip binary
+*.jar binary
+*.resource binary
