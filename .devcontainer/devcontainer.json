@@ -19,9 +19,14 @@
 
   "customizations": {
     "vscode": {
+      // Same tools as the Husky pre-commit hook (Prettier, ESLint) so editor and commit agree.
       "extensions": [
         "salesforce.salesforcedx-vscode",
-        "salesforce.sfdx-code-analyzer-vscode"
+        "salesforce.sfdx-code-analyzer-vscode",
+        "esbenp.prettier-vscode",
+        "dbaeumer.vscode-eslint",
+        "redhat.vscode-xml",
+        "financialforce.lana"
       ],
       "settings": {
         "salesforcedx-vscode-apex.java.home": "/usr/lib/jvm/java-17-openjdk-amd64"
@@ -29,5 +34,6 @@
     }
   },
 
-  "postCreateCommand": "sf --version && sf plugins && java -version && python3 --version && git --version"
+  // npm ci: installs the exact versions from package-lock.json (Prettier, ESLint, Jest, Husky hooks)
+  "postCreateCommand": "npm ci && sf --version && sf plugins && java -version && python3 --version && git --version"
 }
