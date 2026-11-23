@@ -40,7 +40,7 @@ jobs:
         run: npm run lint -- --no-error-on-unmatched-pattern
       - name: LWC unit tests (Jest)
         # sfdx-lwc-jest passes options to Jest only after its own "--"
-        run: npx sfdx-lwc-jest -- --passWithNoTest
+        run: npx sfdx-lwc-jest -- --passWithNoTests
 
   code-analyzer:
     name: Code Analyzer
