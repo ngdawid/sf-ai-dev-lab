@@ -54,3 +54,6 @@ $RECYCLE.BIN/
 sfca_results.*
 test-results/
 .delta/
+
+# Claude Code personal settings
+.claude/settings.local.json
