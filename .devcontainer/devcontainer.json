@@ -1,6 +1,6 @@
 {
   "name": "sf-cicd-lab",
-  "image": "sf-dev:2.159.7",
+  "image": "sf-dev:2.159.7-cc2.1.323",
   "remoteUser": "dev",
   "updateRemoteUserUID": true,
 
@@ -8,8 +8,18 @@
   // Rebuilding the container keeps them; other projects can't see them.
   "mounts": [
     "source=sf-auth-${devcontainerId},target=/home/dev/.sfdx,type=volume",
-    "source=sf-state-${devcontainerId},target=/home/dev/.sf,type=volume"
+    "source=sf-state-${devcontainerId},target=/home/dev/.sf,type=volume",
+    // Claude Code login, settings and session history, also per project
+    "source=claude-config-${devcontainerId},target=/home/dev/.claude,type=volume"
   ],
+
+  // CLAUDE_CONFIG_DIR keeps .claude.json inside the volume (otherwise it is lost on rebuild).
+  // DISABLE_AUTOUPDATER keeps Claude Code at the version pinned in the image.
+  // Never set ANTHROPIC_API_KEY here: Claude Code would bill the API instead of the Pro subscription.
+  "containerEnv": {
+    "CLAUDE_CONFIG_DIR": "/home/dev/.claude",
+    "DISABLE_AUTOUPDATER": "1"
+  },
 
   // OAuth callback for "sf org login web"
   "forwardPorts": [1717],
@@ -26,7 +36,8 @@
         "esbenp.prettier-vscode",
         "dbaeumer.vscode-eslint",
         "redhat.vscode-xml",
-        "financialforce.lana"
+        "financialforce.lana",
+        "anthropic.claude-code"
       ],
       "settings": {
         "salesforcedx-vscode-apex.java.home": "/usr/lib/jvm/java-17-openjdk-amd64"
