@@ -39,7 +39,8 @@ jobs:
       - name: Lint (ESLint for LWC/Aura)
         run: npm run lint -- --no-error-on-unmatched-pattern
       - name: LWC unit tests (Jest)
-        run: npm run test:unit -- --passWithNoTests
+        # sfdx-lwc-jest passes options to Jest only after its own "--"
+        run: npx sfdx-lwc-jest -- --passWithNoTest
 
   code-analyzer:
     name: Code Analyzer
