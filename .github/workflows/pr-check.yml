@@ -39,7 +39,8 @@ jobs:
       - name: Lint (ESLint for LWC/Aura)
         run: npm run lint -- --no-error-on-unmatched-pattern
       - name: LWC unit tests (Jest)
-        run: npm run test:unit -- --passWithNoTests
+        # sfdx-lwc-jest passes options to Jest only after its own "--"
+        run: npx sfdx-lwc-jest -- --passWithNoTests
 
   code-analyzer:
     name: Code Analyzer
@@ -97,7 +98,8 @@ jobs:
         if: steps.check.outputs.has_metadata == 'true'
         env:
           SF_AUTH_URL_QA: ${{ secrets.SF_AUTH_URL_QA }}
-        run: printf '%s' "$SF_AUTH_URL_QA" | sf org login sfdx-url --sfdx-url-stdin --alias lab-qa
+        # "-" means "read the value from stdin". Without it the CLI takes the next word (--alias) as the value.
+        run: printf '%s' "$SF_AUTH_URL_QA" | sf org login sfdx-url --sfdx-url-stdin - --alias lab-qa
       - name: Check-only deploy + local Apex tests
         if: steps.check.outputs.has_metadata == 'true'
         run: |
