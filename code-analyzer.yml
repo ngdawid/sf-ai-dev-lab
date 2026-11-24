@@ -1,0 +1,4 @@
+# Code Analyzer config: applies locally and in CI (pr-check.yml runs with --workspace .)
+engines:
+  eslint:
+    eslint_config_file: "eslint.config.js"
