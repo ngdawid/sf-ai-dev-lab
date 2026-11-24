@@ -37,7 +37,9 @@
         "dbaeumer.vscode-eslint",
         "redhat.vscode-xml",
         "financialforce.lana",
-        "anthropic.claude-code"
+        // The Claude Code panel runs its OWN bundled CLI, whose version = the extension version.
+        // Pin it to the same version as the CLI in the image (D15), so terminal and panel behave the same.
+        "anthropic.claude-code@2.1.323"
       ],
       "settings": {
         "salesforcedx-vscode-apex.java.home": "/usr/lib/jvm/java-17-openjdk-amd64"
