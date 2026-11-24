@@ -15,7 +15,10 @@ a request conflict, ask before acting.
 
 - If the request leaves open who uses it, what data it touches, where values are stored or how it is approved,
   ask first (3–5 short questions), then build. Don't create metadata on assumptions.
-- Work on a branch `feature/<short-name>`. Commit when done. Don't push, open PRs or merge unless asked.
+- Work on the current branch if it isn't `main`; otherwise create `feature/<short-name>`. Commit when done.
+  Don't push, open PRs or merge unless asked.
+- Git: only `status`, `diff`, `log`, `add`, `commit`, `switch`/`checkout -b`. No `stash`, `reset`, `restore`,
+  `rebase`, `clean` or force operations: if the working tree is in a state you didn't expect, stop and ask.
 
 ## Apex
 
@@ -42,7 +45,8 @@ Run all of these and report the results before you say a task is done:
    (all pass; aim for 85% coverage on new classes)
 3. Code Analyzer: `sf code-analyzer run --target force-app --view table`. **No Critical or High findings.**
    Fix them; never suppress or disable a rule without asking.
-4. `npm run lint`, `npm run prettier:verify`, `npx sfdx-lwc-jest -- --passWithNoTests`
+4. `npm run lint -- --no-error-on-unmatched-pattern`, `npm run prettier:verify`,
+   `npx sfdx-lwc-jest -- --passWithNoTests` (exactly as CI runs them)
 
 These are the same checks the PR pipeline runs. Summary: files changed, test result, analyzer result, open points.
 
