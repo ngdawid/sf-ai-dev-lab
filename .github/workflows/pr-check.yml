@@ -1,5 +1,6 @@
 # The independent check (guardrail G8): runs on every pull request into main, outside the
-# reach of whoever (or whatever) wrote the change. Make all three jobs required in branch protection.
+# reach of whoever (or whatever) wrote the change. Required checks in the ruleset: Lint and LWC tests,
+# Code Analyzer, Validate on lab-qa (the last two are skipped, and count as passed, when no Salesforce files changed).
 # Tool versions match the dev container image sf-dev:2.159.7 (playbook D9).
 name: PR check
 
@@ -44,6 +45,8 @@ jobs:
 
   code-analyzer:
     name: Code Analyzer
+    needs: [changes]
+    if: needs.changes.outputs.salesforce == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -74,9 +77,46 @@ jobs:
           echo "::error::Code Analyzer found Critical/High violations or failed to run. See the job summary."
           exit 1
 
+  # Decides whether the PR touches Salesforce code or deploy config. If not, "Code Analyzer" and
+  # "Validate on lab-qa" are skipped ("Lint and LWC tests" always runs: its Prettier step also checks docs).
+  # A job skipped by its "if" reports as successful, so it still satisfies the required check in the ruleset.
+  # (A path filter on the whole workflow would NOT: the check would stay "pending" and block the PR.)
+  changes:
+    name: Detect Salesforce changes
+    runs-on: ubuntu-latest
+    outputs:
+      salesforce: ${{ steps.diff.outputs.salesforce }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Changed files that affect analysis or deployment
+        id: diff
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          if [ "$EVENT" != "pull_request" ]; then
+            echo "salesforce=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::Manual run: always analyze and validate."
+            exit 0
+          fi
+          # Relevant: metadata, project and analyzer config, and this workflow itself (so pipeline changes get tested).
+          changed=$(git diff --name-only "$BASE_SHA...$HEAD_SHA" -- \
+            force-app sfdx-project.json .forceignore code-analyzer.yml .github/workflows/pr-check.yml)
+          if [ -n "$changed" ]; then
+            echo "salesforce=true" >> "$GITHUB_OUTPUT"
+            printf 'Relevant changes:\n%s\n' "$changed"
+          else
+            echo "salesforce=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::No Salesforce changes in this PR: Code Analyzer and validation on lab-qa are skipped."
+          fi
+
   validate:
     name: Validate on lab-qa
-    needs: [lint-and-unit, code-analyzer]
+    needs: [changes, lint-and-unit, code-analyzer]
+    if: needs.changes.outputs.salesforce == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -85,29 +125,18 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
       - name: Install Salesforce CLI
         run: npm install --global @salesforce/cli@${{ env.SF_CLI_VERSION }}
-      - name: Anything to deploy?
-        id: check
-        run: |
-          if find force-app -type f -name '*-meta.xml' | grep -q .; then
-            echo "has_metadata=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "has_metadata=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::No metadata in force-app yet, skipping validation."
-          fi
       - name: Log in to lab-qa
-        if: steps.check.outputs.has_metadata == 'true'
         env:
           SF_AUTH_URL_QA: ${{ secrets.SF_AUTH_URL_QA }}
         # "-" means "read the value from stdin". Without it the CLI takes the next word (--alias) as the value.
         run: printf '%s' "$SF_AUTH_URL_QA" | sf org login sfdx-url --sfdx-url-stdin - --alias lab-qa
       - name: Check-only deploy + local Apex tests
-        if: steps.check.outputs.has_metadata == 'true'
         run: |
           sf project deploy validate --source-dir force-app --target-org lab-qa \
             --test-level RunLocalTests --wait 30 \
             --junit --coverage-formatters json-summary --results-dir test-results
       - name: Upload test results
-        if: always() && steps.check.outputs.has_metadata == 'true'
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: apex-test-results
