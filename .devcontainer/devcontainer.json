@@ -1,6 +1,6 @@
 {
   "name": "sf-cicd-lab",
-  "image": "sf-dev:2.159.7-cc2.1.323-g4",
+  "image": "sf-dev:2.159.7-cc2.1.331-g4",
   "remoteUser": "dev",
   "updateRemoteUserUID": true,
 
@@ -39,7 +39,7 @@
         "financialforce.lana",
         // The Claude Code panel runs its OWN bundled CLI, whose version = the extension version.
         // Pin it to the same version as the CLI in the image (D15), so terminal and panel behave the same.
-        "anthropic.claude-code@2.1.323"
+        "anthropic.claude-code@2.1.331"
       ],
       "settings": {
         "salesforcedx-vscode-apex.java.home": "/usr/lib/jvm/java-17-openjdk-amd64"
