@@ -1,5 +1,6 @@
 # The independent check (guardrail G8): runs on every pull request into main, outside the
-# reach of whoever (or whatever) wrote the change. Make all three jobs required in branch protection.
+# reach of whoever (or whatever) wrote the change. Required checks in the ruleset: Lint and LWC tests,
+# Code Analyzer, Validate on lab-qa (the last one is skipped, and counts as passed, when nothing deployable changed).
 # Tool versions match the dev container image sf-dev:2.159.7 (playbook D9).
 name: PR check
 
@@ -74,9 +75,45 @@ jobs:
           echo "::error::Code Analyzer found Critical/High violations or failed to run. See the job summary."
           exit 1
 
+  # Decides whether the PR touches anything that deploys. If not, "Validate on lab-qa" is skipped.
+  # A job skipped by its "if" reports as successful, so it still satisfies the required check in the ruleset.
+  # (A path filter on the whole workflow would NOT: the check would stay "pending" and block the PR.)
+  changes:
+    name: Detect deployable changes
+    runs-on: ubuntu-latest
+    outputs:
+      deploy: ${{ steps.diff.outputs.deploy }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Changed files that affect deployment
+        id: diff
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          if [ "$EVENT" != "pull_request" ]; then
+            echo "deploy=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::Manual run: always validate."
+            exit 0
+          fi
+          # Deployable: metadata, project config, and this workflow itself (so pipeline changes get tested).
+          changed=$(git diff --name-only "$BASE_SHA...$HEAD_SHA" -- \
+            force-app sfdx-project.json .forceignore .github/workflows/pr-check.yml)
+          if [ -n "$changed" ]; then
+            echo "deploy=true" >> "$GITHUB_OUTPUT"
+            printf 'Deployable changes:\n%s\n' "$changed"
+          else
+            echo "deploy=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::No deployable changes in this PR, skipping validation on lab-qa."
+          fi
+
   validate:
     name: Validate on lab-qa
-    needs: [lint-and-unit, code-analyzer]
+    needs: [changes, lint-and-unit, code-analyzer]
+    if: needs.changes.outputs.deploy == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
