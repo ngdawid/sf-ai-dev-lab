@@ -15,7 +15,10 @@ module.exports = defineConfig([
   // LWC configuration
   {
     files: ["**/lwc/**/*.js"],
-    extends: [lwcConfig]
+    extends: [lwcConfig],
+    settings: {
+      jest: { version: require("jest/package.json").version }
+    }
   },
 
   // LWC configuration with override for LWC test files
