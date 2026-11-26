@@ -31,18 +31,33 @@ const GENERIC_ERROR = "Recent contacts could not be loaded.";
 export default class AccountRecentContacts extends NavigationMixin(
   LightningElement
 ) {
-  @api recordId;
-
   columns = COLUMNS;
   contacts = [];
   errorMessage;
   isLoading = true;
+  _recordId;
+
+  @api
+  get recordId() {
+    return this._recordId;
+  }
+
+  // A new record means new data: show the spinner instead of the previous record's rows or error.
+  set recordId(value) {
+    if (value !== this._recordId) {
+      this._recordId = value;
+      this.isLoading = true;
+      this.contacts = [];
+      this.errorMessage = undefined;
+    }
+  }
 
   @wire(getRecentContacts, { accountId: "$recordId" })
   async wiredContacts({ data, error }) {
     if (data) {
+      const requestedRecordId = this.recordId;
       try {
-        this.contacts = await Promise.all(
+        const contacts = await Promise.all(
           data.map(async (contact) => ({
             ...contact,
             contactUrl: await this[NavigationMixin.GenerateUrl]({
@@ -55,8 +70,16 @@ export default class AccountRecentContacts extends NavigationMixin(
             })
           }))
         );
+        // recordId changed while the links were generated: this result belongs to the old record.
+        if (requestedRecordId !== this.recordId) {
+          return;
+        }
+        this.contacts = contacts;
         this.errorMessage = undefined;
       } catch {
+        if (requestedRecordId !== this.recordId) {
+          return;
+        }
         this.contacts = [];
         this.errorMessage = GENERIC_ERROR;
       }

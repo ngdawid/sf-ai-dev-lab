@@ -11,7 +11,35 @@ jest.mock(
   { virtual: true }
 );
 
+// Navigation mock whose GenerateUrl the tests control, so link generation can be held back for one record.
+const mockGenerateUrl = jest.fn();
+jest.mock("lightning/navigation", () => {
+  const Navigate = Symbol("Navigate");
+  const GenerateUrl = Symbol("GenerateUrl");
+  const NavigationMixin = (Base) =>
+    class extends Base {
+      [Navigate]() {}
+      [GenerateUrl](pageReference) {
+        return mockGenerateUrl(pageReference);
+      }
+    };
+  NavigationMixin.Navigate = Navigate;
+  NavigationMixin.GenerateUrl = GenerateUrl;
+  return { NavigationMixin };
+});
+
 const ACCOUNT_ID = "001000000000001AAA";
+const OTHER_ACCOUNT_ID = "001000000000002AAA";
+const OTHER_ACCOUNT_CONTACTS = [
+  {
+    Id: "003000000000003AAA",
+    Name: "Grace Hopper",
+    Title: "Admiral",
+    Email: "grace@example.com",
+    Phone: "555-0003",
+    LastModifiedDate: "2026-11-26T10:00:00.000Z"
+  }
+];
 const MOCK_CONTACTS = [
   {
     Id: "003000000000001AAA",
@@ -48,6 +76,10 @@ function createComponent() {
 }
 
 describe("c-account-recent-contacts", () => {
+  beforeEach(() => {
+    mockGenerateUrl.mockResolvedValue("https://www.example.com");
+  });
+
   afterEach(() => {
     while (document.body.firstChild) {
       document.body.removeChild(document.body.firstChild);
@@ -110,5 +142,74 @@ describe("c-account-recent-contacts", () => {
     expect(error).not.toBeNull();
     expect(error.textContent).toContain("No access");
     expect(element.shadowRoot.querySelector("lightning-datatable")).toBeNull();
+  });
+
+  it("clears the previous record's rows and shows the spinner when recordId changes", async () => {
+    const element = createComponent();
+    getRecentContacts.emit(MOCK_CONTACTS);
+    await flushPromises();
+    expect(
+      element.shadowRoot.querySelector("lightning-datatable")
+    ).not.toBeNull();
+
+    element.recordId = OTHER_ACCOUNT_ID;
+    await flushPromises();
+
+    expect(
+      element.shadowRoot.querySelector("lightning-spinner")
+    ).not.toBeNull();
+    expect(element.shadowRoot.querySelector("lightning-datatable")).toBeNull();
+    expect(getRecentContacts.getLastConfig()).toEqual({
+      accountId: OTHER_ACCOUNT_ID
+    });
+  });
+
+  it("clears the previous record's error when recordId changes", async () => {
+    const element = createComponent();
+    getRecentContacts.error({ message: "No access" });
+    await flushPromises();
+    expect(
+      element.shadowRoot.querySelector('[data-id="error"]')
+    ).not.toBeNull();
+
+    element.recordId = OTHER_ACCOUNT_ID;
+    await flushPromises();
+
+    expect(element.shadowRoot.querySelector('[data-id="error"]')).toBeNull();
+    expect(
+      element.shadowRoot.querySelector("lightning-spinner")
+    ).not.toBeNull();
+  });
+
+  it("ignores a result for the old recordId that resolves after the new one", async () => {
+    // Hold back link generation for the first Account's Contacts until the second Account has rendered.
+    let releaseOldLinks;
+    const oldLinksHeld = new Promise((resolve) => {
+      releaseOldLinks = resolve;
+    });
+    const oldContactIds = new Set(MOCK_CONTACTS.map((contact) => contact.Id));
+    mockGenerateUrl.mockImplementation((pageReference) => {
+      if (oldContactIds.has(pageReference.attributes.recordId)) {
+        return oldLinksHeld.then(() => "https://www.example.com/old");
+      }
+      return Promise.resolve("https://www.example.com/new");
+    });
+    const element = createComponent();
+    getRecentContacts.emit(MOCK_CONTACTS);
+    await flushPromises();
+
+    element.recordId = OTHER_ACCOUNT_ID;
+    await flushPromises();
+    getRecentContacts.emit(OTHER_ACCOUNT_CONTACTS);
+    await flushPromises();
+    releaseOldLinks();
+    await flushPromises();
+
+    const table = element.shadowRoot.querySelector("lightning-datatable");
+    expect(table).not.toBeNull();
+    expect(table.data.map((contact) => contact.Id)).toEqual(
+      OTHER_ACCOUNT_CONTACTS.map((contact) => contact.Id)
+    );
+    expect(table.data[0].contactUrl).toBe("https://www.example.com/new");
   });
 });

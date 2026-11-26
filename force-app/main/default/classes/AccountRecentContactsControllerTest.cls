@@ -53,8 +53,21 @@ private class AccountRecentContactsControllerTest {
   }
 
   @IsTest
-  static void shouldSortByLastModifiedDateDescending_WhenContactsReturned() {
+  static void shouldOrderByLastModifiedDateThenIdDescending_WhenContactsReturned() {
     Id accountId = getAccountId(BULK_ACCOUNT_NAME);
+    // LastModifiedDate can't be set in tests. The bulk insert gives most Contacts the same value but can
+    // span a second boundary, so the exact order depends on both keys: newest first, ties by Id DESC.
+    // The expected Ids come from an independent query on both keys and are compared exactly.
+    List<Id> expectedIds = new List<Id>();
+    for (Contact expected : [
+      SELECT Id
+      FROM Contact
+      WHERE AccountId = :accountId
+      ORDER BY LastModifiedDate DESC, Id DESC
+      LIMIT :AccountRecentContactsController.MAX_CONTACTS
+    ]) {
+      expectedIds.add(expected.Id);
+    }
 
     Test.startTest();
     List<Contact> contacts = AccountRecentContactsController.getRecentContacts(
@@ -62,15 +75,15 @@ private class AccountRecentContactsControllerTest {
     );
     Test.stopTest();
 
-    // LastModifiedDate can't be set in tests and records inserted together share it, so picking specific
-    // "newest" records would pass by accident. Check the order instead: each date >= the next one.
-    // Ties on LastModifiedDate are decided by the secondary sort, Id DESC.
-    for (Integer i = 0; i < contacts.size() - 1; i++) {
-      Assert.isTrue(
-        contacts[i].LastModifiedDate >= contacts[i + 1].LastModifiedDate,
-        'Contact at position ' + i + ' should not be older than the next one'
-      );
+    List<Id> actualIds = new List<Id>();
+    for (Contact actual : contacts) {
+      actualIds.add(actual.Id);
     }
+    Assert.areEqual(
+      expectedIds,
+      actualIds,
+      'Contacts should be ordered by LastModifiedDate descending, then Id descending'
+    );
   }
 
   @IsTest
