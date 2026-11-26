@@ -1,0 +1,31 @@
+<template>
+  <lightning-card title="Recent Contacts" icon-name="standard:contact">
+    <div class="slds-var-p-horizontal_small">
+      <template lwc:if={isLoading}>
+        <lightning-spinner
+          alternative-text="Loading recent contacts"
+          size="small"
+        ></lightning-spinner>
+      </template>
+      <template lwc:if={errorMessage}>
+        <p class="slds-text-color_error" role="alert" data-id="error">
+          {errorMessage}
+        </p>
+      </template>
+      <template lwc:if={isEmpty}>
+        <p class="slds-text-color_weak" data-id="empty">
+          This account has no contacts.
+        </p>
+      </template>
+      <template lwc:if={hasContacts}>
+        <lightning-datatable
+          key-field="Id"
+          data={contacts}
+          columns={columns}
+          hide-checkbox-column
+          aria-label="Five most recently modified contacts"
+        ></lightning-datatable>
+      </template>
+    </div>
+  </lightning-card>
+</template>
