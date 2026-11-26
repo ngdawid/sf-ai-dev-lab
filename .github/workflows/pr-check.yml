@@ -106,9 +106,10 @@ jobs:
             echo "::notice::Manual run: always analyze and validate."
             exit 0
           fi
-          # Relevant: metadata, project and analyzer config, and this workflow itself (so pipeline changes get tested).
+          # Relevant: metadata, project config, analyzer and lint config (+ the packages they load), and this workflow itself.
           changed=$(git diff --name-only "$BASE_SHA...$HEAD_SHA" -- \
-            force-app sfdx-project.json .forceignore code-analyzer.yml .github/workflows/pr-check.yml)
+            force-app sfdx-project.json .forceignore code-analyzer.yml eslint.config.js package.json package-lock.json \
+            .github/workflows/pr-check.yml)
           if [ -n "$changed" ]; then
             echo "salesforce=true" >> "$GITHUB_OUTPUT"
             printf 'Relevant changes:\n%s\n' "$changed"

@@ -56,4 +56,5 @@ test-results/
 .delta/
 
 # Claude Code personal settings
-.claude/settings.local.jsonCLAUDE.local.md
+.claude/settings.local.json
+CLAUDE.local.md

@@ -11,6 +11,8 @@ a request conflict, ask before acting. These project rules override guidance fro
    for approval before writing files.
 3. **Build.** Follow the rules for the metadata type (`.claude/rules/`) and use the matching skill:
    Apex → `platform-apex-generate`, Apex tests → `platform-apex-test-generate`, LWC → `experience-lwc-generate`.
+   Create and change files with the Write and Edit tools, not with shell commands (`cat > file <<EOF`, `sed -i`):
+   hooks check file writes, and the diff stays reviewable.
 4. **Verify.** Run the definition of done (below) and report the results.
 5. **Hand over.** Summarize; the human then runs `/code-review` and `/security-review` and opens the PR.
 
