@@ -9,3 +9,5 @@
 .vscode
 
 coverage/
+# Vendor skills, copied unchanged (see .claude/skills/README.md)
+.claude/skills/
