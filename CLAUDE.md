@@ -7,8 +7,10 @@ a request conflict, ask before acting. These project rules override guidance fro
 
 1. **Understand.** Read the relevant code first. If the request leaves open who uses it, what data it touches, where
    values are stored or how it is approved, ask 3–5 short questions before anything else.
-2. **Plan.** For anything bigger than a one-file change, propose a plan (files, data model, security, tests) and wait
-   for approval before writing files.
+2. **Plan.** For anything bigger than a one-file change, propose a plan and wait for approval before writing files.
+   The plan has two parts. **Functional:** who uses it, what it does, acceptance criteria (Given/When/Then), out of
+   scope. **Technical:** metadata and components, data access and sharing, test plan, risks. After approval, save it
+   as `docs/design/<feature>.md` and commit it with the feature.
 3. **Build.** Follow the rules for the metadata type (`.claude/rules/`) and use the matching skill:
    Apex → `platform-apex-generate`, Apex tests → `platform-apex-test-generate`, LWC → `experience-lwc-generate`.
    Create and change files with the Write and Edit tools, not with shell commands (`cat > file <<EOF`, `sed -i`):

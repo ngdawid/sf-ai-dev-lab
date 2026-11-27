@@ -35,3 +35,9 @@ These override `platform-apex-generate` and `platform-apex-test-generate` where 
 - Follow `platform-apex-test-generate`: `TestDataFactory`, 251+ records for bulk tests (crosses the 200-record
   trigger chunk), `Assert` class, one behaviour per test method.
 - A failing test means: fix the code. Change an assertion only if the assertion itself is wrong, and say so.
+- Test method names are camelCase without underscores (`returnsNewestFirstWhenContactsExist`), not the skill's
+  `should…_When…`: PMD's `MethodNamingConventions` flags underscores.
+- Test data must pass the org's duplicate rules: names and emails unique across every factory call in a test.
+- Ordering tests: give records distinct sort keys where you can set them. Where you can't (`LastModifiedDate`,
+  `CreatedDate` in one transaction), compute the expected order in Apex from the returned records' own fields and
+  assert the tie-breaker explicitly. Never assume timestamps are equal, or different.

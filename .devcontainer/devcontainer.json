@@ -1,6 +1,6 @@
 {
   "name": "sf-cicd-lab",
-  "image": "sf-dev:2.159.7-cc2.1.331-g5",
+  "image": "sf-dev:2.159.7-cc2.1.331-g6",
   "remoteUser": "dev",
   "updateRemoteUserUID": true,
 
